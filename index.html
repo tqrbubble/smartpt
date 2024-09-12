@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartPT</title>
+    <link rel="icon" href="https://raw.githubusercontent.com/tqrbubble/smartpt/main/icon.jpg" type="image/jpeg">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.2.12/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.3/purify.min.js"></script>
+</head>
+<body onselectstart="return false;">
+    
+    <div id="sidebar" class="sidebar-closed">
+        <div id="sidebar-header">
+            <h2>
+                <span class="smart">Smart</span><span class="pt">PT</span>
+            </h2>
+        </div>
+        <div id="chatList"></div>
+        <button id="newChatBtn"><i class="fas fa-plus"></i> New Chat</button>
+        <button id="exportBtn"><i class="fas fa-download"></i> Export Chats</button>
+        <button id="importBtn"><i class="fas fa-upload"></i> Import Chats</button>
+        <input type="file" id="importInput" style="display: none;" accept=".json">
+    </div>
+
+    <div id="sidebar-backdrop"></div>
+
+    <div id="app">
+        <div id="chatContainer">
+            <div id="chatHeader">
+                <div id="chatTitle">New Conversation</div>
+                <div id="chatOptions">
+                    <button id="toggleThemeBtn" title="Toggle Theme"><i class="fas fa-adjust" style="display: none"></i></button>
+                    <button id="toggleSettingsBtn" title="Chat Settings"><i class="fas fa-cog"></i></button>
+                    <button id="clearChatBtn" title="Clear Chat"><i class="fas fa-trash"></i></button>
+                    <button id="toggleSidebarBtn" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
+                </div>
+            </div>
+            <div id="chatBox"></div>
+            <div id="inputContainer">
+                <textarea id="userInput" placeholder="Type your message..." rows="1"></textarea>
+                <button id="sendButton"><i class="fas fa-paper-plane"></i></button>
+                <button id="voiceInputBtn"><i class="fas fa-microphone"></i></button>
+            </div>
+        </div>
+    </div>
+    <div id="settingsContainer" style="display: none;">
+        <h3>Chat Settings</h3>
+        <div class="setting">
+            <label for="modelSelector">Model:</label>
+            <select id="modelSelector">
+                <option value="llama-3.1-70b-versatile">Llama 3.1 70B</option>
+                <option value="llama-3.1-8b-instant">Llama 3.1 8B</option>
+                <option value="llama3-70b-8192">Llama 3 70B</option>
+                <option value="llama3-8b-8192">Llama 3 8B</option>
+                <option value="gemma2-9b-it">Gemma 2 9B</option>
+                <option value="gemma-7b-it">Gemma 7B</option>
+            </select>
+        </div>
+        <div class="setting">
+            <label for="temperatureSlider">Temperature:</label>
+            <input type="range" id="temperatureSlider" min="0" max="1" step="0.1" value="0.7">
+            <span id="temperatureValue">0.7</span>
+        </div>
+        <div class="setting">
+            <label for="maxTokensInput">Max Tokens:</label>
+            <input type="number" id="maxTokensInput" min="1" max="8000" value="8000">
+        </div>
+        <div class="setting">
+            <label for="topPSlider">Top P:</label>
+            <input type="range" id="topPSlider" min="0" max="1" step="0.1" value="0.9">
+            <span id="topPValue">0.9</span>
+        </div>
+        <div class="setting">
+            <label for="customInstructions">Custom Instructions:</label>
+            <textarea id="customInstructions" rows="4" placeholder="Enter custom instructions for the AI..."></textarea>
+            <button id="generatePromptBtn">Generate Better Prompt</button>
+        </div>
+        <button id="saveSettingsBtn">Save Settings</button>
+    </div>
+    <script src="scripts.js"></script>
+</body>
+</html>
