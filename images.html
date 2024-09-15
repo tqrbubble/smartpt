@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Image Generator</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(120deg, #2c3e50, #4a69bd, #6a89cc);
+            background-size: 300% 300%;
+            animation: gradientShift 15s ease infinite;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .image-container {
+            transition: transform 0.3s ease-in-out;
+        }
+        .image-container:hover {
+            transform: scale(1.05);
+        }
+        .loading {
+            background: linear-gradient(90deg, #4a69bd, #6a89cc);
+            background-size: 200% 100%;
+            animation: loadingAnimation 1.5s infinite;
+        }
+        @keyframes loadingAnimation {
+            0% { background-position: 100% 0; }
+            100% { background-position: -100% 0; }
+        }
+        .tooltip {
+            visibility: hidden;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            text-align: center;
+            padding: 5px 10px;
+            border-radius: 6px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+        }
+        .has-tooltip:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="gradient-bg text-white min-h-screen">
+    <div class="container mx-auto p-4 flex flex-col lg:flex-row">
+        <div class="lg:w-1/4 mb-4 lg:mb-0">
+            <div class="bg-gray-800 rounded-lg p-6 shadow-lg">
+                <h1 class="text-2xl font-bold mb-4">Advanced Image Generator</h1>
+                <input type="text" id="description" placeholder="Enter description" class="w-full p-2 mb-3 bg-gray-700 rounded">
+                <input type="text" id="style" placeholder="Enter style" class="w-full p-2 mb-3 bg-gray-700 rounded">
+                <select id="aspectRatio" onchange="updateDimensions()" class="w-full p-2 mb-3 bg-gray-700 rounded">
+                    <option value="1:1" data-width="1024" data-height="1024">1:1 Square</option>
+                    <option value="4:3" data-width="1024" data-height="768">4:3 Standard</option>
+                    <option value="16:9" data-width="1024" data-height="576">16:9 Widescreen</option>
+                    <option value="3:2" data-width="1024" data-height="683">3:2 Classic</option>
+                    <option value="5:4" data-width="1024" data-height="819">5:4 Medium Format</option>
+                    <option value="2:1" data-width="1024" data-height="512">2:1 Panorama</option>
+                    <option value="21:9" data-width="1024" data-height="430">21:9 Ultrawide</option>
+                    <option value="1:2" data-width="512" data-height="1024">1:2 Vertical</option>
+                    <option value="4:5" data-width="819" data-height="1024">4:5 Portrait</option>
+                    <option value="9:16" data-width="576" data-height="1024">9:16 Mobile</option>
+                </select>
+                <div class="flex mb-3">
+                    <input type="number" id="width" placeholder="Width" min="1" class="w-1/2 p-2 mr-2 bg-gray-700 rounded">
+                    <input type="number" id="height" placeholder="Height" min="1" class="w-1/2 p-2 bg-gray-700 rounded">
+                </div>
+                <input type="number" id="seed" placeholder="Seed (empty for random)" min="0" class="w-full p-2 mb-3 bg-gray-700 rounded">
+                <button onclick="generateImage()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300">
+                    Generate Image
+                </button>
+                <p id="warningMessage" class="text-red-500 mt-2"></p>
+            </div>
+        </div>
+        <div class="lg:w-3/4 lg:pl-4">
+            <div id="featuredImage" class="w-full h-96 bg-gray-700 rounded-lg mb-4 overflow-hidden flex items-center justify-center">
+                <p class="text-gray-400">Generated image will appear here</p>
+            </div>
+            <div id="imageInfo" class="mb-4 text-sm"></div>
+            <div class="flex justify-between items-center mb-2">
+                <button id="downloadButton" onclick="downloadFeaturedImage()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <i class="fas fa-download mr-2"></i>Download Image
+                </button>
+                <button id="regenerateButton" onclick="regenerateImage()" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <i class="fas fa-sync-alt mr-2"></i>Regenerate
+                </button>
+                <button id="clearHistoryButton" onclick="clearImageHistory()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition duration-300">
+                    <i class="fas fa-trash-alt mr-2"></i>Clear History
+                </button>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-4">
+                <h2 class="text-xl font-semibold mb-2 cursor-pointer" onclick="toggleCollapsible()">
+                    <i class="fas fa-history mr-2"></i>Image History
+                </h2>
+                <div id="collapsibleContent" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="max-w-4xl max-h-full p-4 relative">
+            <img id="modalImage" src="" alt="Larger View" class="max-w-full max-h-full object-contain">
+            <button onclick="downloadModalImage()" class="absolute top-4 right-4 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-300">
+                <i class="fas fa-download mr-2"></i>Download
+            </button>
+            <button onclick="closeModal()" class="absolute top-4 left-4 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition duration-300">
+                <i class="fas fa-times mr-2"></i>Close
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let currentImageBlob = null;
+        let currentImageInfo = null;
+        let imageHistory = [];
+    
+        // Load image history from local storage on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadImageHistory();
+            updateImageHistoryDisplay();
+        });
+    
+        function roundUpToMultiple(value, multiple) {
+            return Math.ceil(value / multiple) * multiple;
+        }
+    
+        function validateDimensions() {
+            const widthInput = document.getElementById('width');
+            const heightInput = document.getElementById('height');
+            const warningMessage = document.getElementById('warningMessage');
+    
+            const width = parseInt(widthInput.value) || 0;
+            const height = parseInt(heightInput.value) || 0;
+    
+            if (width % 8 !== 0 || height % 8 !== 0) {
+                warningMessage.textContent = 'Width and height must be divisible by 8.';
+                return false;
+            } else {
+                warningMessage.textContent = '';
+                return true;
+            }
+        }
+    
+        function updateDimensions() {
+            const aspectRatioSelect = document.getElementById('aspectRatio');
+            const widthInput = document.getElementById('width');
+            const heightInput = document.getElementById('height');
+            
+            const selectedOption = aspectRatioSelect.options[aspectRatioSelect.selectedIndex];
+            const width = parseInt(selectedOption.getAttribute('data-width'));
+            const height = parseInt(selectedOption.getAttribute('data-height'));
+    
+            widthInput.value = width;
+            heightInput.value = height;
+    
+            validateDimensions();
+        }
+    
+        function getRandomSeed() {
+            return Math.floor(Math.random() * 1000000) + 1;
+        }
+    
+        function toggleCollapsible() {
+            const content = document.getElementById('collapsibleContent');
+            content.classList.toggle('hidden');
+        }
+    
+        async function generateImage() {
+            if (!validateDimensions()) {
+                return;
+            }
+    
+            const description = document.getElementById('description').value;
+            const style = document.getElementById('style').value;
+            const width = parseInt(document.getElementById('width').value) || 512;
+            const height = parseInt(document.getElementById('height').value) || 512;
+            const seedInput = document.getElementById('seed').value;
+            const seed = seedInput ? parseInt(seedInput) : getRandomSeed();
+    
+            await createImage(description, style, width, height, seed);
+        }
+    
+        async function createImage(description, style, width, height, seed) {
+            const apiUrl = 'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell';
+            const apiKey = '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';
+
+            const featuredImage = document.getElementById('featuredImage');
+            featuredImage.innerHTML = '<div class="w-full h-full loading"></div>';
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        inputs: `${description} in ${style} style`,
+                        parameters: {
+                            width: width,
+                            height: height,
+                            seed: seed
+                        }
+                    })
+                });
+
+                const blob = await response.blob();
+                const base64Data = await blobToBase64(blob);
+                currentImageBlob = blob;
+                const imgUrl = `data:image/png;base64,${base64Data}`;
+
+                featuredImage.innerHTML = `<img src="${imgUrl}" alt="Generated Image" class="w-full h-full object-contain">`;
+                document.getElementById('downloadButton').disabled = false;
+                document.getElementById('regenerateButton').disabled = false;
+
+                currentImageInfo = { description, style, width, height, seed, imgUrl, base64Data };
+                updateImageInfo();
+                addToImageHistory(currentImageInfo);
+            } catch (error) {
+                console.error('Error generating image:', error);
+                featuredImage.innerHTML = '<p class="text-red-500">Error generating image. Please try again.</p>';
+                document.getElementById('downloadButton').disabled = true;
+                document.getElementById('regenerateButton').disabled = true;
+            }
+        }
+
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+    
+        function updateImageInfo() {
+            const imageInfo = document.getElementById('imageInfo');
+            imageInfo.innerHTML = `
+                <p><strong>Description:</strong> ${currentImageInfo.description}</p>
+                <p><strong>Style:</strong> ${currentImageInfo.style}</p>
+                <p><strong>Dimensions:</strong> ${currentImageInfo.width}x${currentImageInfo.height}</p>
+                <p><strong>Seed:</strong> ${currentImageInfo.seed}</p>
+            `;
+        }
+    
+        function addToImageHistory(imageInfo) {
+            imageHistory.unshift(imageInfo);
+            updateImageHistoryDisplay();
+            saveImageHistory();
+        }
+    
+        function updateImageHistoryDisplay() {
+            const collapsibleContent = document.getElementById('collapsibleContent');
+            collapsibleContent.innerHTML = '';
+    
+            imageHistory.forEach((imageInfo, index) => {
+                const imageContainer = document.createElement('div');
+                imageContainer.className = 'image-container relative';
+                
+                const img = document.createElement('img');
+                img.src = imageInfo.imgUrl;
+                img.alt = 'Generated Image';
+                img.className = 'w-full h-48 object-cover rounded-lg cursor-pointer';
+                img.addEventListener('click', () => openModal(imageInfo.imgUrl));
+    
+                const overlay = document.createElement('div');
+                overlay.className = 'image-overlay absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg pointer-events-none';
+                
+                const infoContainer = document.createElement('div');
+                infoContainer.className = 'text-white text-xs p-2';
+                infoContainer.innerHTML = `
+                    <p><strong>Description:</strong> ${imageInfo.description}</p>
+                    <p><strong>Style:</strong> ${imageInfo.style}</p>
+                    <p><strong>Seed:</strong> ${imageInfo.seed}</p>
+                `;
+                
+                overlay.appendChild(infoContainer);
+                imageContainer.appendChild(img);
+                imageContainer.appendChild(overlay);
+    
+                collapsibleContent.appendChild(imageContainer);
+            });
+    
+            if (imageHistory.length > 12) {
+                imageHistory.pop();
+                updateImageHistoryDisplay();
+            }
+        }
+    
+        function openModal(imgUrl) {
+            const modal = document.getElementById('modal');
+            const modalImage = document.getElementById('modalImage');
+            modalImage.src = imgUrl;
+            modal.classList.remove('hidden');
+        }
+    
+        function displayHistoryImage(index) {
+            const imageInfo = imageHistory[index];
+            document.getElementById('featuredImage').innerHTML = `
+                <img src="${imageInfo.imgUrl}" alt="Generated Image" class="w-full h-full object-contain">
+            `;
+            currentImageInfo = imageInfo;
+            currentImageBlob = null; // We don't have the blob for history images
+            updateImageInfo();
+            document.getElementById('downloadButton').disabled = false;
+            document.getElementById('regenerateButton').disabled = false;
+        }
+    
+        function regenerateImage() {
+            if (currentImageInfo) {
+                createImage(
+                    currentImageInfo.description,
+                    currentImageInfo.style,
+                    currentImageInfo.width,
+                    currentImageInfo.height,
+                    getRandomSeed() // Use a new random seed for regeneration
+                );
+            }
+        }
+    
+        function downloadFeaturedImage() {
+            if (currentImageBlob) {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(currentImageBlob);
+                link.download = `generated_image_${currentImageInfo.seed}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else if (currentImageInfo) {
+                // For images from history, we don't have the blob, so we'll download the image directly
+                const link = document.createElement('a');
+                link.href = currentImageInfo.imgUrl;
+                link.download = `generated_image_${currentImageInfo.seed}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+    
+        function downloadModalImage() {
+            const modalImage = document.getElementById('modalImage');
+            const link = document.createElement('a');
+            link.href = modalImage.src;
+            link.download = 'generated_image.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    
+        function clearImageHistory() {
+            imageHistory = [];
+            updateImageHistoryDisplay();
+            localStorage.removeItem('imageHistory');
+        }
+    
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+    
+        // New functions for local storage
+    
+        function saveImageHistory() {
+            const historyToSave = imageHistory.map(info => ({
+                ...info,
+                base64Data: info.base64Data // Save base64 data
+            }));
+            localStorage.setItem('imageHistory', JSON.stringify(historyToSave));
+        }
+
+        function loadImageHistory() {
+            const savedHistory = localStorage.getItem('imageHistory');
+            if (savedHistory) {
+                imageHistory = JSON.parse(savedHistory);
+                imageHistory.forEach(info => {
+                    info.imgUrl = `data:image/png;base64,${info.base64Data}`;
+                });
+                updateImageHistoryDisplay();
+            }
+        }
+    
+        document.getElementById('modal').addEventListener('click', (event) => {
+            if (event.target === document.getElementById('modal')) {
+                closeModal();
+            }
+        });
+    
+        updateDimensions();
+    </script>
+</body>
+</html>
