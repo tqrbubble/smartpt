@@ -998,3 +998,7 @@ button, #sendButton, #voiceInputBtn, .message-actions button {
     font-style: italic;
     color: var(--text-secondary);
 }
+
+.message {
+    white-space: pre-wrap;
+}
