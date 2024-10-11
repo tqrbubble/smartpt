@@ -326,11 +326,6 @@ function appendMessage(role, content) {
             });
         };
 
-        const speakBtn = document.createElement('button');
-        speakBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
-        speakBtn.title = 'Read aloud';
-        speakBtn.onclick = () => toggleSpeech(content, speakBtn);
-
         const regenerateBtn = document.createElement('button');
         regenerateBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
         regenerateBtn.title = 'Regenerate response';
@@ -359,7 +354,6 @@ function appendMessage(role, content) {
         };
 
         actionsDiv.appendChild(copyBtn);
-        actionsDiv.appendChild(speakBtn);
         actionsDiv.appendChild(regenerateBtn);
         messageElement.appendChild(actionsDiv);
     }
