@@ -1,4 +1,4 @@
-const apiKey = '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';
+const apiKey = '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';
 const baseUrl = 'https://api.groq.com/openai/v1';
 const chatBox = document.getElementById('chatBox');
 const userInput = document.getElementById('userInput');
